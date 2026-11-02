@@ -27,11 +27,21 @@
         - MinDistributeOverTimeInSeconds              = 60
         - SaveClientStateIntervalInSeconds            = 1800
 
+    .PARAMETER TaniumPolicy
+        Name of the policy tag that must be present before the image is prepared.
+        If the tag has not landed, the script throws an error and changes nothing.
+        If omitted or empty, no policy check is done.
+
     .EXAMPLE
         .\Set-TaniumGoldenImage.ps1
 
         Run from an elevated PowerShell session. The script elevates itself to
         SYSTEM through a temporary scheduled task where needed.
+
+    .EXAMPLE
+        .\Set-TaniumGoldenImage.ps1 -TaniumPolicy citrix_image
+
+        Only prepares the image when the citrix_image policy tag has landed.
 
     .INPUTS
         None.
@@ -52,7 +62,13 @@
 
 #Requires -RunAsAdministrator
 
+[CmdletBinding()]
+param(
+    [string]$TaniumPolicy = ''
+)
+
 #region Variables
+    [string]$TagsRegistryPath  = 'HKLM:\SOFTWARE\WOW6432Node\Tanium\Tanium Client\Sensor Data\Tags'
     [string]$TaniumExecutable  = 'TaniumClient.exe'
     [string]$TaniumServiceName = 'Tanium*'
     [string]$TaskName          = 'TaniumConfig-TempSystemTask'
@@ -72,6 +88,16 @@
     [array]$OptionsToRemove = 'ComputerId',
                               'LastGoodServerName',
                               'RegistrationCount'
+#endregion
+
+#region Validate policy tag
+    # Checked before the SYSTEM re-launch, so the SYSTEM run does not need the parameter
+    if ($TaniumPolicy) {
+        if ($null -eq (Get-ItemProperty -Path $TagsRegistryPath -ErrorAction SilentlyContinue).$TaniumPolicy) {
+            throw "Tanium policy $TaniumPolicy has not landed. Golden image prep aborted."
+        }
+        Write-Output "Tanium policy: $TaniumPolicy has landed."
+    }
 #endregion
 
 #region Re-launch as SYSTEM (needed when Tamper Protection is enabled)

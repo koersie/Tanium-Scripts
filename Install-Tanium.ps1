@@ -9,19 +9,34 @@
 	.PARAMETER WaitForPolicyTimeout
 		Maximum number of seconds to wait for the policy tag. Only used when TaniumPolicy is set.
 
+	.PARAMETER Servers
+		Tanium server(s) to connect to. Accepts an array or a single comma-separated string.
+
+	.PARAMETER ServerPort
+		Tanium server port. Default is 17472.
+
+	.PARAMETER VerbosityLevel
+		Client log verbosity level: 1, 41 or 91. Default is 1.
+
+	.PARAMETER InstallerPath
+		Path to the Tanium Client installer. Default is SetupClient.exe in the script folder.
+
+	.PARAMETER LogPath
+		Path of the transcript. Default is C:\Windows\Logs\TaniumInstall.log.
+
 	.EXAMPLE
 		.\Install-Tanium.ps1
 		Runs with all default values (no policy check).
 
 	.EXAMPLE
 		.\Install-Tanium.ps1 -Servers "tanium1.corp.local,tanium2.corp.local" -TaniumPolicy citrix_image -WaitForPolicyTimeout 600
-	
+
 	.NOTES
         Author      : Matthijs Koers
-        Requires    : Administrator rights, script saved as a .ps1 file readable by SYSTEM
-        Log file    : C:\Windows\Logs\TaniumConfig.log (remove before sealing the image if unwanted)
-        Exit codes  : 0 = all options applied and verified, 1 = one or more steps failed
-        Services    : All services matching 'Tanium*' are stopped
+        Requires    : Administrator rights, SetupClient.exe
+        Log file    : C:\Windows\Logs\TaniumInstall.log (remove before sealing the image if unwanted)
+        Exit codes  : 0 = installed, 3010 = installed (reboot required), 1 = install failed
+                      A policy tag that does not land only writes a warning; it does not change the exit code
 #>
 [CmdletBinding()]
 param(
